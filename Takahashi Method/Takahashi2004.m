@@ -49,43 +49,69 @@ for i = 1:32
     
 end
 
-%% SVM Takahashi
-
-%% labels and features videos
-
-pos = label_all(:,1)>=6.33333;
-neg = label_all(:,1)<3.66667;
-neu = label_all(:,1)<6.33333 & label_all(:,1)>=3.66667;
-
-labels = [];
-labels(pos) = 1;
-labels(neu) = 3;
-labels(neg) = 2;
-labels = labels';
-labels = repmat(labels, [32,1]);
-
 % features
 features = [EEGfeatures GSRfeatures];
 
-N = length(labels);
+%% normalization
 
-%% SVM one-against-all one-leave-out
-pred = zeros(32,1);
-for i = 1:32
-    itrain = 1:N;
-    itest = ((i-1)*40+1):(i*40);
-    itrain(itest) = [];
-    neutral = find(labels(itrain) == 3);
-    positive = find(labels(itrain) == 1);
-    negative = find(labels(itrain) == 2);
-    neutral = datasample(neutral,279);
-    positive = datasample(positive,279);
-    itrain = [positive;neutral;negative];
-    smvStructs = Allsvm(features(itrain,:),labels(itrain),3);
+meanfea = mean(features);
+stdfea = std(features);
+features_norm = zeros(size(features));
+
+for i = 1:size(features,2)
+    features_norm(:,i) = (features(:,i) - meanfea(i))/stdfea(i);
+end
+
+%% SVM Takahashi
+
+%% SVM one-against-all one-leave-out 3 classes
+
+classes_3_train = labels_3(index_final_train_3); 
+N = length(classes_3_train);
+pred = zeros(N,1);
+
+for i = index_final_train_3
+    itrain = index_final_train_3;
+    itest = i;
+    itrain(find(itest==itrain)) = [];
+    smvStructs = Allsvm(features(itrain,:),labels_3(itrain),3);
     p = predictSVM(smvStructs,features(itest,:));
-    pred(i,1) = mean(double(p == labels(itest))) * 100;
+    pred(i,1) = mean(double(p == labels_3(itest))) * 100;
     display([num2str(i) ': ' num2str(pred(i,1)) ' - ' num2str(mean(pred))]);
-    [C,order] = confusionmat(double(labels(itest)),p)
+    [C,order] = confusionmat(double(labels_3(itest)),p);
 end
 
 res = mean(pred);
+
+% final testing accuracy
+
+smvStructs = Allsvm(features_norm(index_final_train_3,:),labels_3(index_final_train_3),3);
+p = predictSVM(smvStructs,features_norm(index_final_test_3,:));
+accuracy_final_3 = mean(double(p == labels_3(index_final_test_3))) * 100;
+[C,order] = confusionmat(double(labels_3(index_final_test_3)),p)
+
+%% SVM one-against-all one-leave-out 5 classes
+
+classes_5_train = labels_5(index_final_train_5); 
+N = length(classes_5_train);
+pred = zeros(N,1);
+
+for i = index_final_train_5
+    itrain = index_final_train_5;
+    itest = i;
+    itrain(find(itest==itrain)) = [];
+    smvStructs = Allsvm(features(itrain,:),labels_5(itrain),5);
+    p = predictSVM(smvStructs,features(itest,:));
+    pred(i,1) = mean(double(p == labels_5(itest))) * 100;
+    display([num2str(i) ': ' num2str(pred(i,1)) ' - ' num2str(mean(pred))]);
+    [C,order] = confusionmat(double(labels_5(itest)),p);
+end
+
+res = mean(pred);
+
+% final testing accuracy
+
+smvStructs = Allsvm(features_norm(index_final_train_5,:),labels_5(index_final_train_5,1),5);
+p = predictSVM(smvStructs,features_norm(index_final_test_5,:));
+accuracy_final_5 = mean(double(p == labels_5(index_final_test_5))) * 100;
+[C,order] = confusionmat(double(labels_5(index_final_test_5)),p)

@@ -10,15 +10,16 @@ p = zeros(size(X, 1), 1);
 newClasses = zeros(size(X, 1), size(all_svm, 1));
 
 for i = 1:num_labels
-    newClasses(:,i) = svmclassify(all_svm(i),X);
+    [c,newClasses(:,i)] = svmclassify(all_svm(i),X);
 end
 
 for i = 1:m
-    if(~isempty(find(newClasses(i,:)==1)))
-        p(i) = find(newClasses(i,:)==1,1);
-    else
-        p(i) = 3;
-    end
+    [c, p(i)] = min(newClasses(i,:));
+%     if(~isempty(find(newClasses(i,:)==1)))
+%         p(i) = find(newClasses(i,:)==1,1);
+%     else
+%         p(i) = 1;
+%     end
 end
 
 end
