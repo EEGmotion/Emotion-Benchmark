@@ -1,3 +1,3 @@
-# DEAP-Benchmark
+# Emotion-Benchmark
 
 Codes for emotion classification 
